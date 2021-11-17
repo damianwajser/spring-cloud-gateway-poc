@@ -1,5 +1,6 @@
 package com.example.demo;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.reactivestreams.Publisher;
 import org.springframework.cloud.gateway.filter.factory.rewrite.RewriteFunction;
@@ -27,23 +28,34 @@ public class ResponseBodyRewrite implements RewriteFunction<String, String> {
 	@Override
 	public Publisher<String> apply(ServerWebExchange serverWebExchange, String body) {
 		try {
-			Map<String, Object> map = objectMapper.readValue(body, Map.class);
-			if(map.get("errorCode").equals("0000")) {
-				map = removeUnusedFields(map);
-			}else{
-				map = createError(map);
-				serverWebExchange.getResponse().setStatusCode(HttpStatus.BAD_REQUEST);
+			if (serverWebExchange.getResponse().getStatusCode().equals(HttpStatus.OK)) {
+				return communicationOk(serverWebExchange, body);
+			} else {
+				//TODO:escribir error del servicio externo
+				serverWebExchange.getResponse().setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR);
+				return Mono.just(objectMapper.writeValueAsString(Map.of("error","se rompio")));
 			}
-			return Mono.just(objectMapper.writeValueAsString(map));
 		} catch (IOException e) {
 			e.printStackTrace();
+			serverWebExchange.getResponse().setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR);
+			return Mono.just("parsing error");
 		}
-		return null;
+	}
+
+	private Mono<String> communicationOk(ServerWebExchange serverWebExchange, String body) throws JsonProcessingException {
+		Map<String, Object> map = objectMapper.readValue(body, Map.class);
+		if (map.get("errorCode").equals("0000")) {
+			map = removeUnusedFields(map);
+		} else {
+			map = createError(map);
+			serverWebExchange.getResponse().setStatusCode(HttpStatus.BAD_REQUEST);
+		}
+		return Mono.just(objectMapper.writeValueAsString(map));
 	}
 
 	private Map<String, Object> createError(Map<String, Object> map) {
 		Map<String, Object> response = new HashMap<>();
-		response.put("new_error",map.get("errorMessage"));
+		response.put("new_error", map.get("errorMessage"));
 		return response;
 	}
 
