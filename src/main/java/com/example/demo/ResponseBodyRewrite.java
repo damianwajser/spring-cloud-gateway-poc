@@ -16,13 +16,10 @@ import java.util.Map;
 public class ResponseBodyRewrite implements RewriteFunction<String, String> {
 
 	private ObjectMapper objectMapper;
-	private Collection<String> errorsMapping;
-	private Collection<String> skipInOk;
-	private String errorField;
 
-	public ResponseBodyRewrite(ObjectMapper objectMapper, Collection<String> skipInOk) {
+
+	public ResponseBodyRewrite(ObjectMapper objectMapper) {
 		this.objectMapper = objectMapper;
-		this.skipInOk = skipInOk;
 	}
 
 	@Override
@@ -33,7 +30,7 @@ public class ResponseBodyRewrite implements RewriteFunction<String, String> {
 			} else {
 				//TODO:escribir error del servicio externo
 				serverWebExchange.getResponse().setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR);
-				return Mono.just(objectMapper.writeValueAsString(Map.of("error","se rompio")));
+				return Mono.just(objectMapper.writeValueAsString(Map.of("error", "se rompio")));
 			}
 		} catch (IOException e) {
 			e.printStackTrace();

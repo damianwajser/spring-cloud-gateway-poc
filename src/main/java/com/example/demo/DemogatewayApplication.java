@@ -23,13 +23,13 @@ public class DemogatewayApplication {
 	public RouteLocator customRouteLocator(RouteLocatorBuilder builder, ObjectMapper objectMapper) {
 		return builder.routes()
 				.route("lala", r -> r.path("/error")
-						.filters(f -> f.rewritePath("/error","/error_controller")
-								.modifyResponseBody(String.class, String.class, new ResponseBodyRewrite(objectMapper, Arrays.asList("error"))))
-						.uri("http://localhost:"+port))
+						.filters(f -> f.rewritePath("/error", "/error_controller")
+								.modifyResponseBody(String.class, String.class, new ResponseBodyRewrite(objectMapper)))
+						.uri("http://localhost:" + port))
 				.route("lala1", r -> r.path("/ok")
-						.filters(f -> f.rewritePath("/ok","/ok_controller")
-								.modifyResponseBody(String.class, String.class, new ResponseBodyRewrite(objectMapper, Arrays.asList("error"))))
-						.uri("http://localhost:"+port))
+						.filters(f -> f.rewritePath("/ok", "/ok_controller")
+								.modifyResponseBody(String.class, String.class, new ResponseBodyRewrite(objectMapper)))
+						.uri("http://localhost:" + port))
 				.build();
 	}
 
