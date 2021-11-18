@@ -1,4 +1,4 @@
-package com.example.demo;
+package com.example.demo.gateway.filters;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -17,16 +17,24 @@ public abstract class ResponseBodyRewrite implements RewriteFunction<String, Str
 
 	private ObjectMapper objectMapper;
 
+	/***
+	 * @return returns a collection of values to check against the declared error field (getCheckErrorField)
+	 */
 	protected abstract Collection<Object> getOkValues();
 
 	protected abstract String getErrorMessageField();
 
+	/***
+	 * @return field used to know if there was an error
+	 */
 	protected abstract String getCheckErrorField();
 
+	/**
+	 * @return Collection of fields that will be omitted in the response when the real server answers correctly
+	 */
 	protected abstract Set<String> getUnusedFieldsInHappyPath();
 
 	protected abstract Map<String, Object> getMessageErrorCommunication();
-
 
 	public ResponseBodyRewrite(ObjectMapper objectMapper) {
 		this.objectMapper = objectMapper;
@@ -35,9 +43,12 @@ public abstract class ResponseBodyRewrite implements RewriteFunction<String, Str
 	@Override
 	public Publisher<String> apply(ServerWebExchange serverWebExchange, String body) {
 		try {
+			//check if real server return http code ok
 			if (serverWebExchange.getResponse().getStatusCode().equals(HttpStatus.OK)) {
+				//then build response ok comunication level
 				return communicationOk(serverWebExchange, body);
 			} else {
+				// if real server return error, write error communication message
 				serverWebExchange.getResponse().setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR);
 				return communicationError(serverWebExchange, body);
 			}
@@ -60,13 +71,10 @@ public abstract class ResponseBodyRewrite implements RewriteFunction<String, Str
 		}
 	}
 
-
-
 	private Mono<String> communicationError(ServerWebExchange serverWebExchange, String body) throws JsonProcessingException {
 		serverWebExchange.getResponse().setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR);
 		return Mono.just(objectMapper.writeValueAsString(createError(serverWebExchange, getMessageErrorCommunication())));
 	}
-
 
 	private ExceptionDetail createError(ServerWebExchange serverWebExchange, Map<String, Object> map) {
 		ExceptionDetail detail = new ExceptionDetail((String) map.get(getCheckErrorField()), (String) map.get(getErrorMessageField()), Optional.empty());

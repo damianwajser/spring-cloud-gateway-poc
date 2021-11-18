@@ -1,5 +1,6 @@
-package com.example.demo;
+package com.example.demo.gateway.filters.impl;
 
+import com.example.demo.gateway.filters.ResponseBodyRewrite;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.util.Collection;

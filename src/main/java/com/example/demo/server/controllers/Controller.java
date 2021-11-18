@@ -1,8 +1,7 @@
-package com.example.demo;
+package com.example.demo.server.controllers;
 
-import com.example.demo.model.RequestDto;
+import com.example.demo.server.model.RequestDto;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController

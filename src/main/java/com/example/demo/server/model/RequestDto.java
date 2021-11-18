@@ -1,4 +1,4 @@
-package com.example.demo.model;
+package com.example.demo.server.model;
 
 public class RequestDto {
 
