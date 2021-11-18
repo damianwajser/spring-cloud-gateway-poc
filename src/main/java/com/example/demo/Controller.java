@@ -15,6 +15,11 @@ public class Controller {
 
 	@GetMapping("/ok_controller")
 	public RequestDto ok (){
-		return new RequestDto("0000","error","value");
+		return new RequestDto("0000","no error","value");
+	}
+
+	@GetMapping("/comunication_error_controller")
+	public RequestDto comunicationError (){
+		throw new RuntimeException("rompi");
 	}
 }

@@ -24,11 +24,15 @@ public class DemogatewayApplication {
 		return builder.routes()
 				.route("lala", r -> r.path("/error")
 						.filters(f -> f.rewritePath("/error", "/error_controller")
-								.modifyResponseBody(String.class, String.class, new ResponseBodyRewrite(objectMapper)))
+								.modifyResponseBody(String.class, String.class, new BancoRerwitter(objectMapper)))
 						.uri("http://localhost:" + port))
 				.route("lala1", r -> r.path("/ok")
 						.filters(f -> f.rewritePath("/ok", "/ok_controller")
-								.modifyResponseBody(String.class, String.class, new ResponseBodyRewrite(objectMapper)))
+								.modifyResponseBody(String.class, String.class, new BancoRerwitter(objectMapper)))
+						.uri("http://localhost:" + port))
+				.route("lala1", r -> r.path("/communication_error")
+						.filters(f -> f.rewritePath("/communication_error", "/comunication_error_controller")
+								.modifyResponseBody(String.class, String.class, new BancoRerwitter(objectMapper)))
 						.uri("http://localhost:" + port))
 				.build();
 	}

@@ -2,6 +2,8 @@ package com.example.demo;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.damianwajser.exceptions.model.ErrorMessage;
+import com.github.damianwajser.exceptions.model.ExceptionDetail;
 import org.reactivestreams.Publisher;
 import org.springframework.cloud.gateway.filter.factory.rewrite.RewriteFunction;
 import org.springframework.http.HttpStatus;
@@ -9,13 +11,19 @@ import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
 import java.io.IOException;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
-public class ResponseBodyRewrite implements RewriteFunction<String, String> {
+public abstract class ResponseBodyRewrite implements RewriteFunction<String, String> {
 
 	private ObjectMapper objectMapper;
+
+	protected abstract Collection<Object> getOkValues();
+
+	protected abstract String getCheckErrorField();
+
+	protected abstract Set<String> getUnusedFieldsInHappyPath();
+
+	protected abstract Map<String, Object> getMessageErrorCommunication();
 
 
 	public ResponseBodyRewrite(ObjectMapper objectMapper) {
@@ -28,11 +36,10 @@ public class ResponseBodyRewrite implements RewriteFunction<String, String> {
 			if (serverWebExchange.getResponse().getStatusCode().equals(HttpStatus.OK)) {
 				return communicationOk(serverWebExchange, body);
 			} else {
-				//TODO:escribir error del servicio externo
 				serverWebExchange.getResponse().setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR);
-				return Mono.just(objectMapper.writeValueAsString(Map.of("error", "se rompio")));
+				return communicationError(serverWebExchange, body);
 			}
-		} catch (IOException e) {
+		} catch (JsonProcessingException e) {
 			e.printStackTrace();
 			serverWebExchange.getResponse().setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR);
 			return Mono.just("parsing error");
@@ -41,23 +48,32 @@ public class ResponseBodyRewrite implements RewriteFunction<String, String> {
 
 	private Mono<String> communicationOk(ServerWebExchange serverWebExchange, String body) throws JsonProcessingException {
 		Map<String, Object> map = objectMapper.readValue(body, Map.class);
-		if (map.get("errorCode").equals("0000")) {
+		Object valueToCheck = map.get(getCheckErrorField());
+		if (getOkValues().contains(valueToCheck)) {
 			map = removeUnusedFields(map);
+			return Mono.just(objectMapper.writeValueAsString(map));
 		} else {
-			map = createError(map);
 			serverWebExchange.getResponse().setStatusCode(HttpStatus.BAD_REQUEST);
+			return Mono.just(objectMapper.writeValueAsString(createError(serverWebExchange, map)));
 		}
-		return Mono.just(objectMapper.writeValueAsString(map));
 	}
 
-	private Map<String, Object> createError(Map<String, Object> map) {
-		Map<String, Object> response = new HashMap<>();
-		response.put("new_error", map.get("errorMessage"));
-		return response;
+
+
+	private Mono<String> communicationError(ServerWebExchange serverWebExchange, String body) throws JsonProcessingException {
+		serverWebExchange.getResponse().setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR);
+		return Mono.just(objectMapper.writeValueAsString(createError(serverWebExchange, getMessageErrorCommunication())));
+	}
+
+
+	private ExceptionDetail createError(ServerWebExchange serverWebExchange, Map<String, Object> map) {
+		ExceptionDetail detail = new ExceptionDetail((String) map.get("errorCode"), (String) map.get("errorMessage"), Optional.empty());
+		return detail;
 	}
 
 	private Map<String, Object> removeUnusedFields(Map<String, Object> map) {
-		map.remove("errorCode");
+		map.keySet().removeAll(getUnusedFieldsInHappyPath());
 		return map;
 	}
+
 }
