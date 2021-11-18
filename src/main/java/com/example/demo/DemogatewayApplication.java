@@ -30,7 +30,7 @@ public class DemogatewayApplication {
 						.filters(f -> f.rewritePath("/ok", "/ok_controller")
 								.modifyResponseBody(String.class, String.class, new BancoRerwitter(objectMapper)))
 						.uri("http://localhost:" + port))
-				.route("lala1", r -> r.path("/communication_error")
+				.route("lala2", r -> r.path("/communication_error")
 						.filters(f -> f.rewritePath("/communication_error", "/comunication_error_controller")
 								.modifyResponseBody(String.class, String.class, new BancoRerwitter(objectMapper)))
 						.uri("http://localhost:" + port))

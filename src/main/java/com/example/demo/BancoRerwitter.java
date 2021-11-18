@@ -19,6 +19,11 @@ public class BancoRerwitter extends ResponseBodyRewrite {
 	}
 
 	@Override
+	protected String getErrorMessageField() {
+		return "errorMessage";
+	}
+
+	@Override
 	protected String getCheckErrorField() {
 		return "errorCode";
 	}

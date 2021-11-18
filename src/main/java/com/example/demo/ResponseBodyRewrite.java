@@ -19,6 +19,8 @@ public abstract class ResponseBodyRewrite implements RewriteFunction<String, Str
 
 	protected abstract Collection<Object> getOkValues();
 
+	protected abstract String getErrorMessageField();
+
 	protected abstract String getCheckErrorField();
 
 	protected abstract Set<String> getUnusedFieldsInHappyPath();
@@ -67,7 +69,7 @@ public abstract class ResponseBodyRewrite implements RewriteFunction<String, Str
 
 
 	private ExceptionDetail createError(ServerWebExchange serverWebExchange, Map<String, Object> map) {
-		ExceptionDetail detail = new ExceptionDetail((String) map.get("errorCode"), (String) map.get("errorMessage"), Optional.empty());
+		ExceptionDetail detail = new ExceptionDetail((String) map.get(getCheckErrorField()), (String) map.get(getErrorMessageField()), Optional.empty());
 		return detail;
 	}
 
