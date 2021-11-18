@@ -2,7 +2,6 @@ package com.example.demo.gateway.filters;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.damianwajser.exceptions.model.ErrorMessage;
 import com.github.damianwajser.exceptions.model.ExceptionDetail;
 import org.reactivestreams.Publisher;
 import org.springframework.cloud.gateway.filter.factory.rewrite.RewriteFunction;
@@ -10,8 +9,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
-import java.io.IOException;
-import java.util.*;
+import java.util.Collection;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+
 
 public abstract class ResponseBodyRewrite implements RewriteFunction<String, String> {
 
@@ -34,7 +36,7 @@ public abstract class ResponseBodyRewrite implements RewriteFunction<String, Str
 	 */
 	protected abstract Set<String> getUnusedFieldsInHappyPath();
 
-	protected abstract Map<String, Object> getMessageErrorCommunication();
+	protected abstract ExceptionDetail getMessageErrorCommunication();
 
 	public ResponseBodyRewrite(ObjectMapper objectMapper) {
 		this.objectMapper = objectMapper;
@@ -44,12 +46,11 @@ public abstract class ResponseBodyRewrite implements RewriteFunction<String, Str
 	public Publisher<String> apply(ServerWebExchange serverWebExchange, String body) {
 		try {
 			//check if real server return http code ok
-			if (serverWebExchange.getResponse().getStatusCode().equals(HttpStatus.OK)) {
+			if (serverWebExchange.getResponse().getStatusCode().is2xxSuccessful()) {
 				//then build response ok comunication level
 				return communicationOk(serverWebExchange, body);
 			} else {
 				// if real server return error, write error communication message
-				serverWebExchange.getResponse().setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR);
 				return communicationError(serverWebExchange, body);
 			}
 		} catch (JsonProcessingException e) {
@@ -73,12 +74,11 @@ public abstract class ResponseBodyRewrite implements RewriteFunction<String, Str
 
 	private Mono<String> communicationError(ServerWebExchange serverWebExchange, String body) throws JsonProcessingException {
 		serverWebExchange.getResponse().setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR);
-		return Mono.just(objectMapper.writeValueAsString(createError(serverWebExchange, getMessageErrorCommunication())));
+		return Mono.just(objectMapper.writeValueAsString(getMessageErrorCommunication()));
 	}
 
 	private ExceptionDetail createError(ServerWebExchange serverWebExchange, Map<String, Object> map) {
-		ExceptionDetail detail = new ExceptionDetail((String) map.get(getCheckErrorField()), (String) map.get(getErrorMessageField()), Optional.empty());
-		return detail;
+		return new ExceptionDetail((String) map.get(getCheckErrorField()), (String) map.get(getErrorMessageField()), Optional.empty());
 	}
 
 	private Map<String, Object> removeUnusedFields(Map<String, Object> map) {

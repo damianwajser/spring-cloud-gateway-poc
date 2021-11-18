@@ -2,15 +2,13 @@ package com.example.demo.gateway.filters.impl;
 
 import com.example.demo.gateway.filters.ResponseBodyRewrite;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.damianwajser.exceptions.model.ExceptionDetail;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
-public class BancoRerwitter extends ResponseBodyRewrite {
+public class BancoRerwiter extends ResponseBodyRewrite {
 
-	public BancoRerwitter(ObjectMapper objectMapper) {
+	public BancoRerwiter(ObjectMapper objectMapper) {
 		super(objectMapper);
 	}
 
@@ -35,7 +33,7 @@ public class BancoRerwitter extends ResponseBodyRewrite {
 	}
 
 	@Override
-	protected Map<String, Object> getMessageErrorCommunication() {
-		return Map.of("errorCode", "xxxx", "errorMessage", "se rompio");
+	protected ExceptionDetail getMessageErrorCommunication() {
+		return new ExceptionDetail("xxxx", "se rompio", Optional.empty());
 	}
 }
